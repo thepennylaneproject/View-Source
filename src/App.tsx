@@ -1,5 +1,89 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
+const GH_ORG = "thepennylaneproject";
+const REPOS_META = [
+  { name: "Relevnt",   ghName: "Relevnt",   fallback: { commits: 678, prs: 162, deployed: true } },
+  { name: "codra",     ghName: "codra",     fallback: { commits: 100, deployed: true } },
+  { name: "ready",     ghName: "ready",     fallback: { commits: 30,  deployed: true } },
+  { name: "FounderOS", ghName: "FounderOS", fallback: { commits: 63 } },
+  { name: "embr",      ghName: "embr",      fallback: {} },
+  { name: "Mythos",    ghName: "Mythos",    fallback: {} },
+  { name: "Passagr",   ghName: "Passagr",   fallback: { deployed: true } },
+  { name: "Advocera",  ghName: "Advocera",  fallback: {} },
+];
+
+function useGitHubStats() {
+  const [repos, setRepos] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [live, setLive] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchAll() {
+      try {
+        const results = await Promise.all(
+          REPOS_META.map(async (r) => {
+            try {
+              const res = await fetch(
+                `https://api.github.com/repos/${GH_ORG}/${r.ghName}`,
+                { headers: { Accept: "application/vnd.github.v3+json" } }
+              );
+              if (!res.ok) throw new Error(String(res.status));
+              const data = await res.json();
+              let commits = (r.fallback as any).commits as number | undefined;
+              try {
+                const cr = await fetch(
+                  `https://api.github.com/repos/${GH_ORG}/${r.ghName}/contributors?per_page=1&anon=true`,
+                  { headers: { Accept: "application/vnd.github.v3+json" } }
+                );
+                if (cr.ok) {
+                  const contribs = await cr.json();
+                  if (Array.isArray(contribs) && contribs.length > 0)
+                    commits = contribs.reduce((s: number, c: any) => s + (c.contributions || 0), 0);
+                }
+              } catch {}
+              return {
+                name: r.name, ghName: r.ghName,
+                commits, stars: data.stargazers_count || 0,
+                language: data.language, pushedAt: data.pushed_at,
+                openIssues: data.open_issues_count || 0,
+                deployed: (r.fallback as any).deployed || false,
+                prs: (r.fallback as any).prs || null,
+                live: true,
+              };
+            } catch {
+              return { name: r.name, ghName: r.ghName, ...(r.fallback as any), live: false };
+            }
+          })
+        );
+        if (!cancelled) { setRepos(results); setLive(results.some((r) => r.live)); setLoading(false); }
+      } catch {
+        if (!cancelled) {
+          setRepos(REPOS_META.map((r) => ({ name: r.name, ghName: r.ghName, ...(r.fallback as any), live: false })));
+          setLoading(false);
+        }
+      }
+    }
+    fetchAll();
+    return () => { cancelled = true; };
+  }, []);
+
+  const totalCommits = repos ? repos.reduce((s, r) => s + (r.commits || 0), 0) : 871;
+  return { repos, loading, live, totalCommits };
+}
+
+function timeAgo(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
+
 const C = {
   bg: "#08090A", bgAlt: "#0F1012", bgCard: "#141518", bgHover: "#1A1B1F",
   border: "#222328", borderLight: "#2A2B30",
@@ -472,8 +556,8 @@ function Nav({ activeSection }: { activeSection: string }) {
 
 function Divider() { return <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${C.border}, transparent)`, margin: "0 48px" }} />; }
 
-function Hero() {
-  const s = [{ value: "8", label: "Products" }, { value: "871+", label: "Commits" }, { value: "1", label: "Builder" }, { value: "$800B+", label: "TAM" }];
+function Hero({ totalCommits }: { totalCommits: number }) {
+  const s = [{ value: "8", label: "Products" }, { value: `${totalCommits}+`, label: "Commits" }, { value: "1", label: "Builder" }, { value: "$800B+", label: "TAM" }];
   return (
     <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 920, margin: "0 auto" }}>
       <FadeIn><p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: C.accent, marginBottom: 24 }}>The Penny Lane Project</p></FadeIn>
@@ -663,17 +747,9 @@ function BuilderSection() {
   );
 }
 
-function SourceSection() {
-  const repos = [
-    { name: "Relevnt", commits: 678, deployed: true, prs: 162 },
-    { name: "codra", commits: 100, deployed: true },
-    { name: "ready", commits: 30, deployed: true },
-    { name: "FounderOS", commits: 63, deployed: false },
-    { name: "embr", commits: null, deployed: false },
-    { name: "Mythos", commits: null, deployed: false },
-    { name: "Passagr", commits: null, deployed: true },
-    { name: "Advocera", commits: null, deployed: false },
-  ];
+function SourceSection({ ghData }: { ghData: ReturnType<typeof useGitHubStats> }) {
+  const { repos, loading, live } = ghData;
+  const displayRepos = repos ?? REPOS_META.map((r) => ({ name: r.name, ghName: r.ghName, ...(r.fallback as any), live: false }));
   return (
     <section id="source" style={{ padding: "120px 48px 200px", maxWidth: 920, margin: "0 auto" }}>
       <FadeIn>
@@ -683,14 +759,25 @@ function SourceSection() {
       </FadeIn>
       <FadeIn delay={0.1}>
         <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, padding: 28, marginBottom: 20 }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.textDim, marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Repositories</div>
-          {repos.map(r => (
-            <div key={r.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${C.border}`, padding: "8px 0", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
-              <span><span style={{ color: C.textDim }}>thepennylaneproject/</span><span style={{ color: C.accent }}>{r.name}</span></span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.textDim, letterSpacing: 1, textTransform: "uppercase" }}>Repositories</span>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: live ? C.green : C.textDim, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: live ? C.green : C.textDim, display: "inline-block", animation: live ? "pulse 2s infinite" : "none" }} />
+              {loading ? "fetching..." : live ? "live from GitHub" : "cached data"}
+            </span>
+          </div>
+          {displayRepos.map((r: any) => (
+            <div key={r.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${C.border}`, padding: "10px 0", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+              <a href={`https://github.com/${GH_ORG}/${r.ghName}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                <span style={{ color: C.textDim }}>{GH_ORG}/</span><span style={{ color: C.accent }}>{r.name}</span>
+              </a>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {r.language && <span style={{ fontSize: 9, color: C.textDim }}>{r.language}</span>}
                 {r.deployed && <span style={{ fontSize: 9, color: C.green, background: C.greenDim, padding: "2px 6px" }}>deployed</span>}
+                {r.pushedAt && <span style={{ fontSize: 9, color: C.textDim }}>{timeAgo(r.pushedAt)}</span>}
                 {r.prs && <span style={{ fontSize: 10, color: C.textDim }}>{r.prs} PRs</span>}
-                {r.commits && <span style={{ fontSize: 10, color: C.textDim }}>{r.commits} commits</span>}
+                {r.commits && <span style={{ fontSize: 10, color: r.live ? C.text : C.textDim }}>{r.commits} commits</span>}
+                {r.stars > 0 && <span style={{ fontSize: 10, color: C.yellow }}>★ {r.stars}</span>}
               </div>
             </div>
           ))}
@@ -727,14 +814,15 @@ function SourceSection() {
 export default function ViewSource() {
   const [as, setAs] = useState("thesis");
   const [to, setTo] = useState(false);
+  const ghData = useGitHubStats();
   useEffect(() => { const l = document.createElement("link"); l.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500;600&display=swap"; l.rel = "stylesheet"; document.head.appendChild(l); }, []);
   useEffect(() => { const h = () => { for (const s of ["source","builder","ecosystem","triangle","thesis"]) { const el = document.getElementById(s); if (el && el.getBoundingClientRect().top < 200) { setAs(s); break; } } }; window.addEventListener("scroll", h, { passive: true }); return () => window.removeEventListener("scroll", h); }, []);
 
   return (
     <div style={{ background: C.bg, color: C.text, minHeight: "100vh", fontFamily: "'DM Sans', sans-serif", paddingBottom: to ? "42vh" : 40 }}>
-      <style>{`*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{background:${C.bg}}::selection{background:${C.accent};color:${C.bg}}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${C.bg}}::-webkit-scrollbar-thumb{background:${C.border}}button:hover{opacity:0.92}a:hover{opacity:0.88}@media(max-width:640px){section{padding-left:20px!important;padding-right:20px!important}nav{padding:0 12px!important}nav>div:last-child{gap:12px!important}nav>div:last-child a{font-size:8px!important}}`}</style>
+      <style>{`*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{background:${C.bg}}::selection{background:${C.accent};color:${C.bg}}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${C.bg}}::-webkit-scrollbar-thumb{background:${C.border}}button:hover{opacity:0.92}a:hover{opacity:0.88}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}@media(max-width:640px){section{padding-left:20px!important;padding-right:20px!important}nav{padding:0 12px!important}nav>div:last-child{gap:12px!important}nav>div:last-child a{font-size:8px!important}}`}</style>
       <Nav activeSection={as} />
-      <Hero />
+      <Hero totalCommits={ghData.totalCommits} />
       <Divider />
       <ThesisSection />
       <Divider />
@@ -744,8 +832,8 @@ export default function ViewSource() {
       <Divider />
       <BuilderSection />
       <Divider />
-      <SourceSection />
-      <footer style={{ borderTop: `1px solid ${C.border}`, padding: "20px 48px", display: "flex", justifyContent: "space-between", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.textDim }}><span>© 2026 The Penny Lane Project</span><span>view-source v0.4</span></footer>
+      <SourceSection ghData={ghData} />
+      <footer style={{ borderTop: `1px solid ${C.border}`, padding: "20px 48px", display: "flex", justifyContent: "space-between", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.textDim }}><span>© 2026 The Penny Lane Project</span><span>view-source v0.5</span></footer>
       <Terminal isOpen={to} onToggle={() => setTo(!to)} />
     </div>
   );

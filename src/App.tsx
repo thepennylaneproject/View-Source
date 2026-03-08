@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 const C = {
   bg: "#08090A", bgAlt: "#0F1012", bgCard: "#141518", bgHover: "#1A1B1F",
@@ -141,7 +141,7 @@ const HELP = `
   [green]help[/]               This message
 `;
 
-function processCmd(cmd) {
+function processCmd(cmd: string) {
   const p = cmd.trim().toLowerCase().split(/\s+/);
   const b = p[0], a = p[1];
   if (b === "help") return HELP;
@@ -249,7 +249,7 @@ function processCmd(cmd) {
   [dim]All tables use Row Level Security (RLS)[/]`;
 
   if (b === "inspect" || b === "market" || b === "diff" || b === "research") {
-    const prod = PRODUCTS[a];
+    const prod = PRODUCTS[a as keyof typeof PRODUCTS];
     if (!prod) return `  [red]Not found.[/] Try: [cyan]relevnt[/], [cyan]embr[/], or [cyan]codra[/]`;
 
     if (b === "inspect") {
@@ -382,7 +382,7 @@ ${extra}
   return `  [red]Command not found:[/] ${cmd}\n  Type [green]help[/] for available commands.`;
 }
 
-function colorize(t) {
+function colorize(t: string) {
   return t.replace(/\[accent\](.*?)\[\/\]/g, `<span style="color:${C.accent}">$1</span>`)
     .replace(/\[green\](.*?)\[\/\]/g, `<span style="color:${C.green}">$1</span>`)
     .replace(/\[blue\](.*?)\[\/\]/g, `<span style="color:${C.blue}">$1</span>`)
@@ -393,21 +393,21 @@ function colorize(t) {
 }
 
 function useInView(th = 0.12) {
-  const r = useRef(null); const [v, sV] = useState(false);
+  const r = useRef<HTMLDivElement>(null); const [v, sV] = useState(false);
   useEffect(() => { const e = r.current; if (!e) return; const o = new IntersectionObserver(([x]) => { if (x.isIntersecting) sV(true); }, { threshold: th }); o.observe(e); return () => o.disconnect(); }, [th]);
-  return [r, v];
+  return [r, v] as const;
 }
-function FadeIn({ children, delay = 0 }) {
+function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const [r, v] = useInView();
   return <div ref={r} style={{ opacity: v ? 1 : 0, transform: v ? "translateY(0)" : "translateY(20px)", transition: `opacity 0.65s ease ${delay}s, transform 0.65s ease ${delay}s` }}>{children}</div>;
 }
 
-function Terminal({ isOpen, onToggle }) {
+function Terminal({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
   const [hist, setHist] = useState([{ type: "sys", text: `  [dim]View Source Terminal v0.4[/]\n  Type [green]help[/] for commands. Try: [green]inspect relevnt[/] · [green]schema relevnt[/] · [green]diff embr[/]` }]);
   const [inp, setInp] = useState("");
-  const [ch, setCh] = useState([]);
+  const [ch, setCh] = useState<string[]>([]);
   const [ci, setCi] = useState(-1);
-  const eR = useRef(null), iR = useRef(null);
+  const eR = useRef<HTMLDivElement>(null), iR = useRef<HTMLInputElement>(null);
   useEffect(() => { eR.current?.scrollIntoView({ behavior: "smooth" }); }, [hist]);
   useEffect(() => { if (isOpen) iR.current?.focus(); }, [isOpen]);
 
@@ -420,7 +420,7 @@ function Terminal({ isOpen, onToggle }) {
     setInp("");
   }, [inp]);
 
-  const onKey = useCallback((e) => {
+  const onKey = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") { run(); return; }
     if (e.key === "ArrowUp") { e.preventDefault(); if (!ch.length) return; const n = ci === -1 ? ch.length - 1 : Math.max(0, ci - 1); setCi(n); setInp(ch[n]); }
     if (e.key === "ArrowDown") { e.preventDefault(); if (ci === -1) return; const n = ci + 1; if (n >= ch.length) { setCi(-1); setInp(""); } else { setCi(n); setInp(ch[n]); } }
@@ -457,9 +457,9 @@ function Terminal({ isOpen, onToggle }) {
   );
 }
 
-function Nav({ activeSection }) {
-  const s = ["thesis","triangle","ecosystem","builder","source"];
-  const l = { thesis: "Thesis", triangle: "Core", ecosystem: "Ecosystem", builder: "Builder", source: "Source" };
+function Nav({ activeSection }: { activeSection: string }) {
+  const s = ["thesis","triangle","ecosystem","builder","source"] as const;
+  const l: Record<string, string> = { thesis: "Thesis", triangle: "Core", ecosystem: "Ecosystem", builder: "Builder", source: "Source" };
   return (
     <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(8,9,10,0.88)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${C.border}`, padding: "0 32px", height: 52, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
       <span style={{ fontFamily: "'JetBrains Mono', monospace", color: C.accent, fontSize: 13, fontWeight: 600, letterSpacing: 1 }}>{">"} view-source</span>
@@ -528,7 +528,7 @@ function ThesisSection() {
 }
 
 function TriangleSection() {
-  const [active, setActive] = useState("relevnt");
+  const [active, setActive] = useState<keyof typeof PRODUCTS>("relevnt");
   const [showRes, setShowRes] = useState(false);
   const p = PRODUCTS[active];
   return (
@@ -541,7 +541,7 @@ function TriangleSection() {
       <FadeIn delay={0.1}>
         <div style={{ display: "flex", gap: 2, marginBottom: 2 }}>
           {Object.entries(PRODUCTS).map(([k, tp]) => (
-            <button key={k} onClick={() => { setActive(k); setShowRes(false); }} style={{ flex: 1, padding: "16px 12px", border: "none", cursor: "pointer", background: active === k ? C.bgCard : C.bgAlt, borderBottom: active === k ? `2px solid ${tp.color}` : "2px solid transparent", transition: "all 0.3s" }}>
+            <button key={k} onClick={() => { setActive(k as keyof typeof PRODUCTS); setShowRes(false); }} style={{ flex: 1, padding: "16px 12px", border: "none", cursor: "pointer", background: active === k ? C.bgCard : C.bgAlt, borderBottom: active === k ? `2px solid ${tp.color}` : "2px solid transparent", transition: "all 0.3s" }}>
               <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, color: active === k ? tp.color : C.textDim }}>{tp.name}</div>
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: C.textDim, marginTop: 4 }}>{tp.market} {tp.marketLabel}</div>
             </button>

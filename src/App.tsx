@@ -1,12 +1,24 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
+function PLPLogo({ size = 24 }: { size?: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
+      width={size} height={size} style={{ display: "block" }}>
+      <path fill="#FFFFFF" fillRule="evenodd"
+        d="M256 0c-141.38 0-256 114.62-256 256s114.62 256 256 256 256-114.62 256-256S397.38 0 256 0zm0 462.4c-113.88 0-206.4-92.52-206.4-206.4S142.12 49.6 256 49.6s206.4 92.52 206.4 206.4S369.88 462.4 256 462.4z"/>
+      <path fill="#C4956A"
+        d="M256 169.6c-47.52 0-86.4 38.88-86.4 86.4h-49.6c0-75.12 60.88-136 136-136v49.6z"/>
+    </svg>
+  );
+}
+
 const GH_ORG = "thepennylaneproject";
 const REPOS_META = [
   { name: "Relevnt",   ghName: "Relevnt",   fallback: { commits: 678, prs: 162, deployed: true } },
-  { name: "codra",     ghName: "codra",     fallback: { commits: 100, deployed: true } },
-  { name: "ready",     ghName: "ready",     fallback: { commits: 30,  deployed: true } },
+  { name: "Codra",     ghName: "Codra",     fallback: { commits: 100, deployed: true } },
+  { name: "Ready",     ghName: "Ready",     fallback: { commits: 30,  deployed: true } },
   { name: "FounderOS", ghName: "FounderOS", fallback: { commits: 63 } },
-  { name: "embr",      ghName: "embr",      fallback: {} },
+  { name: "Embr",      ghName: "Embr",      fallback: {} },
   { name: "Mythos",    ghName: "Mythos",    fallback: {} },
   { name: "Passagr",   ghName: "Passagr",   fallback: { deployed: true } },
   { name: "Advocera",  ghName: "Advocera",  fallback: {} },
@@ -166,8 +178,8 @@ const PRODUCTS = {
       { value: "18+", label: "database tables" },
       { value: "33", label: "serverless endpoints" },
     ],
-    description: "Browser-based AI workspace — 7+ providers with fallback chains, visual node canvas, asset pipeline via Cloudinary, contextual AI assistant (Lyra), full Stripe billing lifecycle with production-grade idempotency. Custom ESLint plugin. Storybook component docs.",
-    techSignals: ["7+ AI providers + fallback chains", "33 serverless endpoints", "18+ tables with RLS", "Stripe billing lifecycle", "Encrypted credential vault", "XYFlow visual canvas", "Custom ESLint plugin", "Storybook docs"],
+    description: "Browser-based AI workspace — 7+ providers with fallback chains, visual node canvas, asset pipeline via Cloudinary, and Lyra, a contextual AI assistant that reads project state and suggests next steps. 100 commits in 12 weeks. 18+ database tables. 33 serverless endpoints. Full Stripe billing with production-grade idempotency.",
+    techSignals: ["7+ AI providers + fallback chains", "33 serverless endpoints", "18+ tables with RLS", "Stripe billing lifecycle", "Encrypted credential vault", "XYFlow visual canvas", "Custom ESLint plugin", "Storybook docs", "Lyra contextual assistant (frontend live, backend in build)"],
     repo: "thepennylaneproject/codra", status: "Alpha", commits: 100, firstCommit: "Dec 2025",
     research: [
       "SMBs spend 6–12% of revenue on SaaS — highest of any company size",
@@ -463,6 +475,53 @@ ${extra}
   [dim]GitHub[/]   github.com/thepennylaneproject
   [dim]Site[/]     thepennylaneproject.org`;
 
+  if (b === "lyra") return `
+  [accent]LYRA — Contextual AI Intelligence[/]
+
+  Lyra is not a chatbot. She is the contextual intelligence layer
+  that connects The Penny Lane Project ecosystem.
+
+  [dim]THE PATTERN[/]
+  Every product in this portfolio uses the same AI principle:
+  understand the user's context, then suggest the next step
+  instead of waiting to be asked.
+
+  [dim]IN CODRA (primary implementation)[/]
+  Embedded sidebar assistant with three states:
+  • [green]Suggestion[/]    — proactive next-step guidance based on project state
+  • [cyan]Clarification[/] — asks for context when the path is ambiguous
+  • [dim]Idle[/]           — watches without interrupting
+
+  [dim]ARCHITECTURE[/]
+  Client:   [green]useLyraSuggestion[/] hook → reads project state, desk context,
+            active specification, recent AI outputs
+  Backend:  [yellow]/api/lyra/suggest[/] — contextual reasoning endpoint [dim](in build)[/]
+  Router:   Multi-provider with fallback chain
+            aimlapi → openai → deepseek → gemini
+
+  [dim]ACROSS THE ECOSYSTEM[/]
+  [accent]Relevnt[/]  → AI that reads your career profile, resume, and saved jobs
+            to surface matches you'd miss and flag ghost postings
+  [green]Embr[/]     → Transparent algorithm layer — creators see why content
+            is surfaced, not just what gets shown
+  [blue]Codra[/]    → Lyra: embedded assistant that learns your project context
+            and guides workflow without being asked
+  [accent]Ready[/]   → AI coaching that adapts to your skill gaps, interview
+            history, and target roles
+
+  [dim]THE PRINCIPLE[/]
+  Most AI tools wait for a prompt. Lyra watches your context
+  and offers guidance at the moment it's useful. The difference
+  between a search engine and an advisor.
+
+  [dim]STATUS[/]
+  Frontend:  [green]Implemented[/]  (suggestion/clarification/idle states)
+  Backend:   [yellow]In build[/]     (/api/lyra/suggest endpoint)
+  Ecosystem: [yellow]Architected[/]  (shared AI routing pattern deployed)
+
+  [dim]See also:[/] [green]inspect codra[/] · [green]stack[/]
+`;
+
   return `  [red]Command not found:[/] ${cmd}\n  Type [green]help[/] for available commands.`;
 }
 
@@ -508,12 +567,12 @@ function Terminal({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void 
     if (e.key === "Enter") { run(); return; }
     if (e.key === "ArrowUp") { e.preventDefault(); if (!ch.length) return; const n = ci === -1 ? ch.length - 1 : Math.max(0, ci - 1); setCi(n); setInp(ch[n]); }
     if (e.key === "ArrowDown") { e.preventDefault(); if (ci === -1) return; const n = ci + 1; if (n >= ch.length) { setCi(-1); setInp(""); } else { setCi(n); setInp(ch[n]); } }
-    if (e.key === "Tab") { e.preventDefault(); const cmds = ["help","thesis","triangle","ls","inspect","market","diff","research","stack","schema","git log","whoami","contact","clear"]; const m = cmds.filter(c => c.startsWith(inp.toLowerCase())); if (m.length === 1) setInp(m[0]); }
+    if (e.key === "Tab") { e.preventDefault(); const cmds = ["help","thesis","triangle","ls","inspect","market","diff","research","stack","schema","git log","whoami","contact","clear","lyra"]; const m = cmds.filter(c => c.startsWith(inp.toLowerCase())); if (m.length === 1) setInp(m[0]); }
   }, [run, ch, ci, inp]);
 
   if (!isOpen) return (
     <div onClick={onToggle} style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "rgba(8,9,10,0.95)", backdropFilter: "blur(12px)", borderTop: `1px solid ${C.border}`, padding: "10px 32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: C.accent }}>{">"} view-source terminal</span>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: C.accent, display: "flex", alignItems: "center", gap: 8 }}><PLPLogo size={16} /><span>view-source terminal</span></span>
       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.textDim }}>click to open · type <span style={{ color: C.green }}>help</span> for commands</span>
     </div>
   );
@@ -521,7 +580,7 @@ function Terminal({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void 
   return (
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "rgba(8,9,10,0.97)", backdropFilter: "blur(16px)", borderTop: `1px solid ${C.accent}40`, display: "flex", flexDirection: "column", height: "42vh", maxHeight: 440 }}>
       <div onClick={onToggle} style={{ padding: "8px 24px", borderBottom: `1px solid ${C.border}`, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: C.accent }}>{">"} view-source terminal</span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: C.accent, display: "flex", alignItems: "center", gap: 8 }}><PLPLogo size={16} /><span>view-source terminal</span></span>
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.textDim }}>▾ collapse</span>
       </div>
       <div onClick={() => iR.current?.focus()} style={{ flex: 1, overflow: "auto", padding: "12px 24px", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: 1.7 }}>
@@ -560,7 +619,7 @@ function Hero({ totalCommits }: { totalCommits: number }) {
   const s = [{ value: "8", label: "Products" }, { value: `${totalCommits}+`, label: "Commits" }, { value: "1", label: "Builder" }, { value: "$800B+", label: "TAM" }];
   return (
     <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 920, margin: "0 auto" }}>
-      <FadeIn><p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: C.accent, marginBottom: 24 }}>The Penny Lane Project</p></FadeIn>
+      <FadeIn><div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}><PLPLogo size={28} /><p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: C.accent, margin: 0 }}>The Penny Lane Project</p></div></FadeIn>
       <FadeIn delay={0.1}><h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(36px, 5.5vw, 64px)", fontWeight: 400, color: C.text, lineHeight: 1.08, marginBottom: 32, letterSpacing: -1 }}>Wherever an individual creates value — as a worker, a creator, or a builder — <span style={{ color: C.accent }}>a platform is extracting from them.</span></h1></FadeIn>
       <FadeIn delay={0.2}><p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 17, lineHeight: 1.7, color: C.textMuted, maxWidth: 580, marginBottom: 48 }}>Three core products. Three points of extraction. One thesis. Scroll to read the specification — or open the terminal and <span style={{ fontFamily: "'JetBrains Mono', monospace", color: C.green, fontSize: 14 }}>inspect</span> it yourself.</p></FadeIn>
       <FadeIn delay={0.3}>
@@ -684,6 +743,157 @@ function TriangleSection() {
           <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: p.color }}>github.com/{p.repo}</span>
         </div>
       </div>
+    </section>
+  );
+}
+
+function LyraSection() {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <section style={{ padding: "80px 48px", maxWidth: 920, margin: "0 auto" }}>
+      <FadeIn>
+        <div style={{
+          background: C.bgCard,
+          border: `1px solid ${C.borderLight}`,
+          padding: 32,
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+            background: `linear-gradient(to bottom, ${C.accent}, ${C.blue}, ${C.green})`,
+          }} />
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <span style={{
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: 2,
+                  textTransform: "uppercase", color: C.accent,
+                }}>
+                  Lyra
+                </span>
+                <span style={{
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 9,
+                  color: C.textDim, background: C.bg, border: `1px solid ${C.border}`,
+                  padding: "2px 8px",
+                }}>
+                  Contextual AI Intelligence
+                </span>
+              </div>
+              <h3 style={{
+                fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 28,
+                fontWeight: 400, color: C.text, lineHeight: 1.3, marginBottom: 12,
+              }}>
+                AI that understands your context<br />
+                and suggests the next step —<br />
+                <span style={{ color: C.accent }}>before you ask.</span>
+              </h3>
+            </div>
+            <div style={{
+              display: "flex", flexDirection: "column", gap: 6,
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+            }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: C.green, display: "inline-block" }} />
+                <span style={{ color: C.textMuted }}>Frontend implemented</span>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: C.yellow, display: "inline-block" }} />
+                <span style={{ color: C.textMuted }}>Backend in build</span>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: C.blue, display: "inline-block" }} />
+                <span style={{ color: C.textMuted }}>Ecosystem architected</span>
+              </div>
+            </div>
+          </div>
+
+          <p style={{
+            fontFamily: "'DM Sans', sans-serif", fontSize: 14, lineHeight: 1.7,
+            color: C.textMuted, margin: "16px 0 20px", maxWidth: 620,
+          }}>
+            Most AI tools wait for a prompt. Lyra watches your context — your project state,
+            your recent outputs, your current task — and offers guidance at the moment it's useful.
+            The difference between a search engine and an advisor.
+          </p>
+
+          <div style={{ display: "flex", gap: 2, marginBottom: 20 }}>
+            {[
+              { product: "Relevnt", color: C.accent, desc: "Reads your career profile, resume, and saved jobs to surface matches you'd miss and flag ghost postings" },
+              { product: "Embr", color: C.green, desc: "Transparent algorithm layer — creators see why content is surfaced, not just what gets shown" },
+              { product: "Codra", color: C.blue, desc: "Embedded assistant that learns your project context and guides workflow without being asked" },
+            ].map(item => (
+              <div key={item.product} style={{
+                flex: 1, background: C.bg, border: `1px solid ${C.border}`,
+                padding: "14px 16px", borderTop: `2px solid ${item.color}`,
+              }}>
+                <div style={{
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
+                  color: item.color, fontWeight: 600, marginBottom: 6,
+                }}>
+                  {item.product}
+                </div>
+                <p style={{
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 11, lineHeight: 1.5,
+                  color: C.textDim, margin: 0,
+                }}>
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <button onClick={() => setExpanded(!expanded)} style={{
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: C.accent,
+            background: C.accentDim, border: `1px solid ${C.accent}30`, padding: "8px 16px",
+            cursor: "pointer", width: "100%", textAlign: "left",
+          }}>
+            {expanded ? "▾" : "▸"} Architecture detail
+          </button>
+
+          {expanded && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+              <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <div style={{
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 9,
+                    letterSpacing: 1, textTransform: "uppercase", color: C.textDim, marginBottom: 10,
+                  }}>
+                    Codra Implementation
+                  </div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, lineHeight: 2, color: C.textMuted }}>
+                    <div><span style={{ color: C.green }}>Client</span> → useLyraSuggestion hook</div>
+                    <div><span style={{ color: C.green }}>States</span> → suggestion · clarification · idle</div>
+                    <div><span style={{ color: C.yellow }}>Backend</span> → /api/lyra/suggest <span style={{ color: C.textDim }}>(in build)</span></div>
+                    <div><span style={{ color: C.green }}>Context</span> → project state, desk, specification, recent outputs</div>
+                    <div><span style={{ color: C.green }}>Router</span> → aimlapi → openai → deepseek → gemini</div>
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <div style={{
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 9,
+                    letterSpacing: 1, textTransform: "uppercase", color: C.textDim, marginBottom: 10,
+                  }}>
+                    The Shared Principle
+                  </div>
+                  <p style={{
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 13, lineHeight: 1.7,
+                    color: C.textMuted, margin: 0,
+                  }}>
+                    Every product in this ecosystem implements the same AI pattern:
+                    ingest user context continuously, reason about what they need next,
+                    and surface guidance proactively. Lyra is the name for that pattern
+                    in its most complete form — an embedded intelligence that turns
+                    raw AI capability into contextual advice.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </FadeIn>
     </section>
   );
 }
@@ -827,13 +1037,14 @@ export default function ViewSource() {
       <ThesisSection />
       <Divider />
       <TriangleSection />
+      <LyraSection />
       <Divider />
       <EcosystemSection />
       <Divider />
       <BuilderSection />
       <Divider />
       <SourceSection ghData={ghData} />
-      <footer style={{ borderTop: `1px solid ${C.border}`, padding: "20px 48px", display: "flex", justifyContent: "space-between", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.textDim }}><span>© 2026 The Penny Lane Project</span><span>view-source v0.5</span></footer>
+      <footer style={{ borderTop: `1px solid ${C.border}`, padding: "20px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.textDim }}><div style={{ display: "flex", alignItems: "center", gap: 8 }}><PLPLogo size={14} /><span>© 2026 The Penny Lane Project</span></div><span>view-source v0.6</span></footer>
       <Terminal isOpen={to} onToggle={() => setTo(!to)} />
     </div>
   );

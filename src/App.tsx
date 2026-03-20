@@ -1,5 +1,34 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
+interface RepoFallback {
+  commits?: number;
+  prs?: number;
+  deployed?: boolean;
+}
+
+interface RepoMeta {
+  name: string;
+  ghName: string;
+  fallback: RepoFallback;
+}
+
+interface RepoData {
+  name: string;
+  ghName: string;
+  commits?: number;
+  prs?: number | null;
+  deployed?: boolean;
+  stars?: number;
+  language?: string;
+  pushedAt?: string;
+  openIssues?: number;
+  live?: boolean;
+}
+
+interface GHContributor {
+  contributions?: number;
+}
+
 function PLPLogo({ size = 24 }: { size?: number }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
@@ -13,7 +42,7 @@ function PLPLogo({ size = 24 }: { size?: number }) {
 }
 
 const GH_ORG = "thepennylaneproject";
-const REPOS_META = [
+const REPOS_META: RepoMeta[] = [
   { name: "Relevnt",   ghName: "Relevnt",   fallback: { commits: 678, prs: 162, deployed: true } },
   { name: "Codra",     ghName: "Codra",     fallback: { commits: 100, deployed: true } },
   { name: "Ready",     ghName: "Ready",     fallback: { commits: 30,  deployed: true } },
@@ -25,7 +54,7 @@ const REPOS_META = [
 ];
 
 function useGitHubStats() {
-  const [repos, setRepos] = useState<any[] | null>(null);
+  const [repos, setRepos] = useState<RepoData[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [live, setLive] = useState(false);
 
@@ -42,36 +71,36 @@ function useGitHubStats() {
               );
               if (!res.ok) throw new Error(String(res.status));
               const data = await res.json();
-              let commits = (r.fallback as any).commits as number | undefined;
+              let commits = r.fallback.commits;
               try {
                 const cr = await fetch(
                   `https://api.github.com/repos/${GH_ORG}/${r.ghName}/contributors?per_page=1&anon=true`,
                   { headers: { Accept: "application/vnd.github.v3+json" } }
                 );
                 if (cr.ok) {
-                  const contribs = await cr.json();
+                  const contribs: GHContributor[] = await cr.json();
                   if (Array.isArray(contribs) && contribs.length > 0)
-                    commits = contribs.reduce((s: number, c: any) => s + (c.contributions || 0), 0);
+                    commits = contribs.reduce((s, c) => s + (c.contributions ?? 0), 0);
                 }
-              } catch {}
+              } catch { /* ignore contributor fetch errors */ }
               return {
                 name: r.name, ghName: r.ghName,
                 commits, stars: data.stargazers_count || 0,
                 language: data.language, pushedAt: data.pushed_at,
                 openIssues: data.open_issues_count || 0,
-                deployed: (r.fallback as any).deployed || false,
-                prs: (r.fallback as any).prs || null,
+                deployed: r.fallback.deployed ?? false,
+                prs: r.fallback.prs ?? null,
                 live: true,
               };
             } catch {
-              return { name: r.name, ghName: r.ghName, ...(r.fallback as any), live: false };
+              return { name: r.name, ghName: r.ghName, ...r.fallback, live: false };
             }
           })
         );
         if (!cancelled) { setRepos(results); setLive(results.some((r) => r.live)); setLoading(false); }
       } catch {
         if (!cancelled) {
-          setRepos(REPOS_META.map((r) => ({ name: r.name, ghName: r.ghName, ...(r.fallback as any), live: false })));
+          setRepos(REPOS_META.map((r) => ({ name: r.name, ghName: r.ghName, ...r.fallback, live: false })));
           setLoading(false);
         }
       }
@@ -959,7 +988,7 @@ function BuilderSection() {
 
 function SourceSection({ ghData }: { ghData: ReturnType<typeof useGitHubStats> }) {
   const { repos, loading, live } = ghData;
-  const displayRepos = repos ?? REPOS_META.map((r) => ({ name: r.name, ghName: r.ghName, ...(r.fallback as any), live: false }));
+  const displayRepos: RepoData[] = repos ?? REPOS_META.map((r): RepoData => ({ name: r.name, ghName: r.ghName, ...r.fallback, live: false }));
   return (
     <section id="source" style={{ padding: "120px 48px 200px", maxWidth: 920, margin: "0 auto" }}>
       <FadeIn>
@@ -976,7 +1005,7 @@ function SourceSection({ ghData }: { ghData: ReturnType<typeof useGitHubStats> }
               {loading ? "fetching..." : live ? "live from GitHub" : "cached data"}
             </span>
           </div>
-          {displayRepos.map((r: any) => (
+          {displayRepos.map((r) => (
             <div key={r.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${C.border}`, padding: "10px 0", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
               <a href={`https://github.com/${GH_ORG}/${r.ghName}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
                 <span style={{ color: C.textDim }}>{GH_ORG}/</span><span style={{ color: C.accent }}>{r.name}</span>
@@ -987,7 +1016,7 @@ function SourceSection({ ghData }: { ghData: ReturnType<typeof useGitHubStats> }
                 {r.pushedAt && <span style={{ fontSize: 9, color: C.textDim }}>{timeAgo(r.pushedAt)}</span>}
                 {r.prs && <span style={{ fontSize: 10, color: C.textDim }}>{r.prs} PRs</span>}
                 {r.commits && <span style={{ fontSize: 10, color: r.live ? C.text : C.textDim }}>{r.commits} commits</span>}
-                {r.stars > 0 && <span style={{ fontSize: 10, color: C.yellow }}>★ {r.stars}</span>}
+                {(r.stars ?? 0) > 0 && <span style={{ fontSize: 10, color: C.yellow }}>★ {r.stars}</span>}
               </div>
             </div>
           ))}

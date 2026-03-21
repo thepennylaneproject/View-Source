@@ -49,8 +49,10 @@ const REPOS_META: RepoMeta[] = [
   { name: "FounderOS", ghName: "FounderOS", fallback: { commits: 63 } },
   { name: "Embr",      ghName: "Embr",      fallback: {} },
   { name: "Mythos",    ghName: "Mythos",    fallback: {} },
+  { name: "Lyra",      ghName: "Lyra",      fallback: { commits: 90, deployed: true } },
   { name: "Passagr",   ghName: "Passagr",   fallback: { deployed: true } },
   { name: "Advocera",  ghName: "Advocera",  fallback: {} },
+  { name: "Witnss",    ghName: "Witnss",    fallback: { commits: 2, deployed: true } },
 ];
 
 function useGitHubStats() {
@@ -109,7 +111,7 @@ function useGitHubStats() {
     return () => { cancelled = true; };
   }, []);
 
-  const totalCommits = repos ? repos.reduce((s, r) => s + (r.commits || 0), 0) : 871;
+  const totalCommits = repos ? repos.reduce((s, r) => s + (r.commits || 0), 0) : 963;
   return { repos, loading, live, totalCommits };
 }
 
@@ -220,14 +222,16 @@ const PRODUCTS = {
     ],
     extraction: "SaaS model creates permanent tax. $500–$1,500/mo for fragmented tools. Vendor lock-in. Proprietary data formats. No ownership, no portability, no leverage.",
     correction: "Single owned workspace. Multi-provider AI routing. Consolidated tooling. Platform-key model absorbs API costs. Your data, your workflow, your infrastructure.",
-  },
-};
+  }
+}
 
 const ECOSYSTEM = [
   { name: "Ready", desc: "AI career coaching & interview prep — the access layer between Relevnt's intelligence and the individual.", color: C.accent, relation: "Extends Relevnt" },
   { name: "Mythos", desc: "AI marketing operations — campaign creation, content generation, social publishing, CRM, unified.", color: C.blue, relation: "Extends Codra" },
+  { name: "Lyra", desc: "Autonomous audit & patch system — multi-agent code quality operations for the entire portfolio. Dashboard wired with Python repair engine.", color: C.blue, relation: "Extends Codra" },
   { name: "FounderOS", desc: "Domain management, email marketing, inbox triage, CRM, and workflow automation in one owned command center.", color: C.blue, relation: "Extends Codra" },
   { name: "Passagr", desc: "Human-verified immigration intelligence for 20+ countries. 46 database migrations. Deployed with production API.", color: C.green, relation: "Civic layer" },
+  { name: "Witnss", desc: "Survivor-centered public registry for domestic violence & abuse records. Evidence-tiered (Tier 1–3). \"Because someone was there.\"", color: C.green, relation: "Civic layer" },
   { name: "Advocera", desc: "Trauma-informed legal intake and attorney matching for people navigating time-sensitive situations under stress.", color: C.green, relation: "Civic layer" },
 ];
 
@@ -235,7 +239,7 @@ const ORIGIN = [
   { label: "Necessity", title: "Medical Dashboard", year: "2026", body: "Personal health intelligence system — extraction scripts, trend visualization, specialist-ready case presentation. Built under time pressure when the healthcare system failed to present a coherent picture.", signal: "When institutions fail the individual, build the tool yourself." },
   { label: "Opportunity", title: "Marketing Portfolio", year: "2025", body: "A decade of digital marketing distilled: 131,976 video views, 300% over-goal recruitment, six-figure budgets. The bridge between strategic execution and technical capability.", signal: "The same person who drove measurable growth taught herself to build." },
   { label: "Analysis", title: "The Restoration Project", year: "2026", body: "Political publishing that documents institutional failure and pairs analysis with policy blueprints. Next.js, Substack integration, Sentry, Netlify. Evidence → briefing → blueprint → action.", signal: "See where institutions hide power — then design the counter-architecture." },
-  { label: "System", title: "The Penny Lane Project", year: "2025–now", body: "Eight interconnected products. One thesis. ~12 weeks. One builder. 871+ combined commits.", signal: "Personal necessity became systemic intervention." },
+  { label: "System", title: "The Penny Lane Project", year: "2025–now", body: "Ten interconnected products. One thesis. ~13 weeks. One builder. 1K+ combined commits.", signal: "Personal necessity became systemic intervention." },
 ];
 
 // ─── Terminal ───
@@ -249,7 +253,7 @@ const HELP = `
   [green]ls -a[/]              List all products with ecosystem
 
   [dim]Deep Inspection[/]
-  [green]inspect[/] [cyan]<name>[/]     Deep dive (relevnt, embr, codra)
+  [green]inspect[/] [cyan]<name>[/]     Deep dive (relevnt, embr, codra, lyra, witnss)
   [green]market[/] [cyan]<name>[/]      Market size, TAM, growth data
   [green]diff[/] [cyan]<name>[/]        Extraction vs. intervention
   [green]research[/] [cyan]<name>[/]    Research citations with sources
@@ -317,8 +321,10 @@ function processCmd(cmd: string) {
   [dim]EXPANDING ECOSYSTEM[/]
   ready      [accent]○[/]  AI career coaching             [dim]Alpha  → Extends Relevnt[/]
   mythos     [blue]○[/]  AI marketing operations         [dim]Alpha  → Extends Codra[/]
+  lyra       [blue]○[/]  Autonomous audit & patch        [dim]Alpha  → Extends Codra[/]  [blue]90 commits[/]
   founderos  [blue]○[/]  Operational command center      [dim]Alpha  → Extends Codra[/]
   passagr    [green]○[/]  Immigration intelligence        [dim]Alpha  → Civic layer[/]
+  witnss     [green]○[/]  DV/abuse survivor registry       [dim]Alpha  → Civic layer[/]
   advocera   [green]○[/]  Legal intake platform           [dim]Alpha  → Civic layer[/]`;
     return `
   [accent]CORE TRIANGLE[/]
@@ -375,7 +381,7 @@ function processCmd(cmd: string) {
 
   if (b === "inspect" || b === "market" || b === "diff" || b === "research") {
     const prod = PRODUCTS[a as keyof typeof PRODUCTS];
-    if (!prod) return `  [red]Not found.[/] Try: [cyan]relevnt[/], [cyan]embr[/], or [cyan]codra[/]`;
+    if (!prod) return `  [red]Not found.[/] Try: [cyan]relevnt[/], [cyan]embr[/], [cyan]codra[/], [cyan]lyra[/], or [cyan]witnss[/]`;
 
     if (b === "inspect") {
       const extra = a === "relevnt" ? `
@@ -392,14 +398,30 @@ function processCmd(cmd: string) {
   [dim]COMMITS[/]        100 in 12 weeks
   [dim]TABLES[/]         18+ with Row Level Security
   [dim]ENDPOINTS[/]      33 serverless functions
-  [dim]BILLING[/]        Full Stripe lifecycle with idempotent webhooks` : `
+  [dim]BILLING[/]        Full Stripe lifecycle with idempotent webhooks` :
+      a === "lyra" ? `
+  [dim]FIRST COMMIT[/]   Mar 7, 2026
+  [dim]COMMITS[/]        90 in 13 days (extremely high velocity)
+  [dim]TABLES[/]         10 migrations defining coherent schema
+  [dim]ENDPOINTS[/]      29 serverless routes
+  [dim]WORKERS[/]        TypeScript + Python multi-agent system
+  [dim]AI ROUTING[/]      7+ providers (OpenAI, Anthropic, Gemini, DeepSeek)
+  [dim]INTEGRATIONS[/]    Linear bidirectional sync, Netlify cron, Sentry` :
+      a === "witnss" ? `
+  [dim]FIRST COMMIT[/]   Mar 19, 2026
+  [dim]COMMITS[/]        2 (rapid alpha iteration underway)
+  [dim]COLLECTIONS[/]    4 Appwrite collections (persons, records, submissions, disputes)
+  [dim]ENDPOINTS[/]      10+ Netlify Functions
+  [dim]ARCHITECTURE[/]   JAMstack (React + Vite + Appwrite + Netlify)
+  [dim]EVIDENCE VAULT[/]  PDF/JPEG/PNG storage with SHA-256 corroboration
+  [dim]SURVIVOR-FIRST[/]  Trauma-informed design, privacy-forward, evidence-tiered` : `
   [dim]ARCHITECTURE[/]   NestJS + Next.js monorepo
   [dim]REAL-TIME[/]      Socket.io messaging
   [dim]PAYMENTS[/]       Stripe Connect wallet system
   [dim]MOBILE[/]         React Native ready`;
 
       return `
-  [${a === "relevnt" ? "accent" : a === "embr" ? "green" : "blue"}]${prod.name}[/] — ${prod.description.split(".")[0]}.
+  [${a === "relevnt" ? "accent" : a === "embr" ? "green" : a === "codra" || a === "lyra" ? "blue" : a === "witnss" ? "green" : "blue"}]${prod.name}[/] — ${prod.description.split(".")[0]}.
 
   [dim]STATUS[/]       ${prod.status}
   [dim]MARKET[/]       ${prod.market} ${prod.marketLabel} (${prod.cagr} CAGR)
@@ -469,7 +491,7 @@ ${extra}
   [accent]COMMIT HISTORY[/]
 
   [yellow]●[/] [dim]2025–present[/]  [accent]The Penny Lane Project[/]
-  │  8 products, ~12 weeks, 871+ combined commits
+  │  10 products, ~13 weeks, 1K+ combined commits
   │  Personal necessity → systemic intervention
   │
   [yellow]●[/] [dim]2026[/]          [accent]The Restoration Project[/]
@@ -491,7 +513,7 @@ ${extra}
 
   10+ years digital marketing & growth strategy
   Self-taught full-stack development
-  Solo-built 8 products — 871+ commits in ~12 weeks
+  Solo-built 10 products — 1K+ commits in ~13 weeks
   Lead product (Relevnt): 678 commits, 106 tables, 162 PRs
 
   [dim]"I don't just market technology. I build it."[/]
@@ -645,7 +667,7 @@ function Nav({ activeSection }: { activeSection: string }) {
 function Divider() { return <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${C.border}, transparent)`, margin: "0 48px" }} />; }
 
 function Hero({ totalCommits }: { totalCommits: number }) {
-  const s = [{ value: "8", label: "Products" }, { value: `${totalCommits}+`, label: "Commits" }, { value: "1", label: "Builder" }, { value: "$800B+", label: "TAM" }];
+  const s = [{ value: "10", label: "Products" }, { value: `${totalCommits}+`, label: "Commits" }, { value: "1", label: "Builder" }, { value: "$800B+", label: "TAM" }];
   return (
     <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 80px", maxWidth: 920, margin: "0 auto" }}>
       <FadeIn><div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}><PLPLogo size={28} /><p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: C.accent, margin: 0 }}>The Penny Lane Project</p></div></FadeIn>
@@ -1035,7 +1057,7 @@ function SourceSection({ ghData }: { ghData: ReturnType<typeof useGitHubStats> }
           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.textDim, marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Research Foundation</div>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, lineHeight: 1.7, color: C.textMuted, margin: "0 0 16px" }}>Each product backed by dedicated market research with primary sources: BLS, NBER, SHRM, World Bank, NIH/PMC, Goldman Sachs, WEF, OECD, LSC, APA.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-            {["Relevnt","Embr","Codra","Ready","Mythos","FounderOS","Passagr","Advocera"].map(n => <span key={n} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.accent, background: C.accentDim, padding: "3px 8px" }}>{n} brief</span>)}
+            {["Relevnt","Embr","Codra","Ready","Mythos","Lyra","FounderOS","Passagr","Witnss","Advocera"].map(n => <span key={n} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.accent, background: C.accentDim, padding: "3px 8px" }}>{n} brief</span>)}
           </div>
         </div>
       </FadeIn>
